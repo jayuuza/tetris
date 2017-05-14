@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block extra_imports %}
+    <link rel="stylesheet" type="text/css" href="{% static "css/tetris.css" %}">
+    <script type="text/babel" src="{% static "js/tetris.js" %}"></script>
+
+{% endblock %}
+
+{% block content %}
+    <div id="game"></div>
+{% endblock %}
+{% block scripts %}
+   <script type="text/babel">
+        ReactDOM.render(<Game/>, document.getElementById("game"));
+   </script>
+{% endblock %}

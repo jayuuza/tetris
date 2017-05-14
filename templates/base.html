@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://unpkg.com/react/dist/react.js"></script>
+    <script src="https://unpkg.com/react-dom/dist/react-dom.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.js"></script>
+    <script src="https://unpkg.com/redux@latest/dist/redux.js"></script>
+
+    {% block extra_imports %}{% endblock %}
+</head>
+<body>
+<a href="/"> Home</a>
+{% if user.is_authenticated %}
+    <p> Thanks for logging in {{ user.username }}. <a href="/accounts/profile"> View your profile</a></p>
+    <a href="/accounts/logout"> Logout</a>
+
+{% else %}
+    <p>Welcome, new user. Please <a href="/accounts/login"> Login</a> or <a href="/accounts/signup"> Signup</a></p>
+
+{% endif %}
+{% block content %}
+    <div id="default"></div>
+{% endblock %}
+{% block scripts %}
+{% endblock %}
+</body>
+</html>
