@@ -1,63 +1,79 @@
 body {
-  font: 14px "Century Gothic", Futura, sans-serif;
-  margin: 20px;
+    font: 14px "Century Gothic", Futura, sans-serif;
+    margin: 20px;
 }
 
 ol, ul {
-  padding-left: 30px;
+    padding-left: 30px;
 }
 
 .board-row:after {
-  clear: both;
-  content: "";
-  display: table;
+    clear: both;
+    content: "";
+    display: table;
 }
 
 .status {
-  margin-bottom: 10px;
+    margin-bottom: 10px;
 }
 
 .square {
-  background: #fff;
-  border: 1px solid #999;
-  float: left;
-  font-size: 24px;
-  font-weight: bold;
-  line-height: 34px;
-  height: 24px;
-  margin-right: -1px;
-  margin-top: -1px;
-  padding: 0;
-  text-align: center;
-  width: 24px;
+    background: #fff;
+    border: 0px;
+    float: left;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 34px;
+    height: 24px;
+    margin-right: -1px;
+    margin-top: -1px;
+    padding: 0;
+    text-align: center;
+    width: 24px;
 }
 
-.square red {
-  background-color: red;
+.square.red {
+    border: 1px solid #999 !important;
+    background-color: red;
 }
 
-.square blue {
-  background-color: blue;
+.square.blue {
+    border: 1px solid #999 !important;
+    background-color: blue;
 }
 
-.square white {
-  background-color: white;
+.square.yellow {
+    border: 1px solid #999 !important;
+    background-color: yellow;
 }
+
+.square.green {
+    border: 1px solid #999 !important;
+    background-color: green;
+}
+
+/*.square white {*/
+/*background-color: white;*/
+/*}*/
 
 .square:focus {
-  outline: none;
+    outline: none;
 }
 
 .kbd-navigation .square:focus {
-  background: #ddd;
+    background: #ddd;
 }
 
 .game {
-  display: flex;
-  flex-direction: row;
-  margin:30px;
+    display: flex;
+    flex-direction: row;
+    margin: 30px;
 }
 
 .game-info {
-  margin-left: 20px;
+    margin-left: 20px;
+}
+
+.piece-preview {
+    margin-left: 20px;
 }
