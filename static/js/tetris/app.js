@@ -1,5 +1,6 @@
 Mousetrap.bind('up', () => store.dispatch({type: 'ROTATE_RIGHT'}));
-Mousetrap.bind('down', () => store.dispatch({type: 'ROTATE_LEFT'}));
+Mousetrap.bind('down', () => store.dispatch({type: 'DOWN'}));
+// Mousetrap.bind('down', () => store.dispatch({type: 'ROTATE_LEFT'}));
 Mousetrap.bind('space', () => store.dispatch({type: 'DOWN'}));
 Mousetrap.bind('left', () => store.dispatch({type: 'LEFT'}));
 Mousetrap.bind('right', () => store.dispatch({type: 'RIGHT'}));
@@ -97,6 +98,7 @@ class GameBoard {
             initital_board[i] = new Array(columns).fill(-1);
         }
         this.board = initital_board;
+        this.score = 0;
     }
 
 
@@ -159,7 +161,44 @@ class GameBoard {
         if (is_valid_move(this.board, this.currentPiece, position)) {
             this.currentPiece.position.x++;
         }
+        else
+        {
+            this.placePiece();
+        }
     }
+
+    placePiece() {
+        for (var i = 0; i < 4; i ++) {
+            const piece = this.currentPiece;
+
+            const x = piece.position.x + piece.shape[i].x - 1;
+            const y = piece.position.y + piece.shape[i].y - 1;
+
+            this.board[x][y] = colors.indexOf(piece.color);
+        }
+
+        //check if theres a line or point to be scored
+        for (var i = 0; i < 25; i++) {
+            var count =0;
+            for (var j = 0; j < 10; j++) {
+                if (this.board[i][j] > -1){
+                    count++;
+                }
+            }
+
+            //remove row
+            if (count === 10) {
+                //var index = this.board.indexOf(i);
+                this.board.splice(i, 1);
+                this.board.unshift(new Array(this.cols).fill(-1));
+                this.score++;
+            }
+        }
+
+        this.currentPiece = this.nextPiece;
+        this.nextPiece = newPiece();
+    }
+
 }
 
 function is_valid_move(board, piece, position) {
@@ -332,7 +371,7 @@ class Game extends React.Component {
         const squares = board.slice();
         const currentPiece = this.state.gameState.gameBoard.currentPiece;
         const nextPiece = this.state.gameState.gameBoard.nextPiece;
-        const score = this.state.gameState.score;
+        const score = this.state.gameState.gameBoard.score;
         const time = this.state.gameState.time;
 
         return (
@@ -363,7 +402,6 @@ class Game extends React.Component {
 const initialGameState = {
     "gameBoard": new GameBoard(25, 10),
     "time": 0,
-    "score": 0,
     "locked":false,
 }
 
@@ -377,6 +415,11 @@ const gamewatch = (state = initialGameState, action) => {
                 };
             case 'RIGHT':
                 state.gameBoard.moveRight();
+                return {
+                    ...state,
+                };
+            case 'DOWN':
+                state.gameBoard.moveDown();
                 return {
                     ...state,
                 };
