@@ -17,20 +17,34 @@ ol, ul {
     margin-bottom: 10px;
 }
 
-.game {
-    border: 2px;
+.game-board {
+    border: 2px solid black;
+    padding-top:1px;
+    padding-right:1px;
+}
+
+.paused :not(h2){
+    opacity: 0.6;
+    filter: alpha(opacity = 60);
+}
+
+.game-board h2 {
+   position: absolute;
+   top: 350px;
+   margin-left: 65px;
+   width: 100%;
 }
 
 .square {
     background: #fff;
-    /*border: 0px;*/
+    border: 0px;
     float: left;
     font-size: 24px;
     font-weight: bold;
     line-height: 34px;
     height: 24px;
-    /*margin-right: -1px;*/
-    /*margin-top: -1px;*/
+    margin-right: -1px;
+    margin-top: -1px;
     padding: 0;
     text-align: center;
     width: 24px;

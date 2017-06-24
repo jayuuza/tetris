@@ -1,7 +1,7 @@
 Mousetrap.bind('up', () => store.dispatch({type: 'ROTATE_RIGHT'}));
 Mousetrap.bind('down', () => store.dispatch({type: 'DOWN'}));
 // Mousetrap.bind('down', () => store.dispatch({type: 'ROTATE_LEFT'}));
-Mousetrap.bind('space', () => store.dispatch({type: 'DOWN'}));
+Mousetrap.bind('space', () => store.dispatch({type: 'DROP'}));
 Mousetrap.bind('left', () => store.dispatch({type: 'LEFT'}));
 Mousetrap.bind('right', () => store.dispatch({type: 'RIGHT'}));
 
@@ -99,6 +99,10 @@ class GameBoard {
         }
         this.board = initital_board;
         this.score = 0;
+        this.time = 0;
+        this.paused = false;
+        this.gameover = false;
+        this.interval = 0;
     }
 
 
@@ -157,13 +161,23 @@ class GameBoard {
     }
 
     moveDown() {
-        const position = new Point(this.currentPiece.position.x + 1, this.currentPiece.position.y);
-        if (is_valid_move(this.board, this.currentPiece, position)) {
-            this.currentPiece.position.x++;
+        // check if current space is occupied
+        // display game over message
+        const curr_position = new Point(this.currentPiece.position.x, this.currentPiece.position.y);
+        if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
+            // reset game
+            this.gameover = true;
         }
         else
         {
-            this.placePiece();
+            const down_position = new Point(this.currentPiece.position.x + 1, this.currentPiece.position.y);
+            if (is_valid_move(this.board, this.currentPiece, down_position)) {
+                this.currentPiece.position.x++;
+            }
+            else
+            {
+                this.placePiece();
+            }
         }
     }
 
@@ -177,7 +191,7 @@ class GameBoard {
             this.board[x][y] = colors.indexOf(piece.color);
         }
 
-        //check if theres a line or point to be scored
+        //check if there is a line or point to be scored
         for (var i = 0; i < 25; i++) {
             var count =0;
             for (var j = 0; j < 10; j++) {
@@ -326,24 +340,6 @@ class ShapePreview extends React.Component {
         );
     }
 }
-//
-//
-// class PieceView extends React.Component {
-//     pieces() {
-//         var count = 0;
-//         return this.props.piece.shape.map(sq => <Square className={"square " + this.props.piece.color} key={count++}
-//                                                         row={sq.x + this.props.piece.position.x}
-//                                                         col={sq.y + this.props.piece.position.y}/>);
-//     }
-//
-//     render() {
-//         return (
-//             <div>
-//                 {this.pieces()}
-//             </div>
-//         )
-//     }
-// }
 
 class Game extends React.Component {
     constructor() {
@@ -353,38 +349,26 @@ class Game extends React.Component {
         };
     }
 
-    startTimer() {
-        this.interval = setInterval(() => store.dispatch({type: 'TIME_INCREMENT'}), 1000);
-    }
-
-    pauseTimer() {
-        clearInterval(this.interval);
-    }
-
-    resetTimer() {
-        store.dispatch({type: 'RESET_TIMER'});
-        clearInterval(this.interval);
-    }
-
     render() {
         var board = this.state.gameState.gameBoard.board;
         const squares = board.slice();
         const currentPiece = this.state.gameState.gameBoard.currentPiece;
         const nextPiece = this.state.gameState.gameBoard.nextPiece;
         const score = this.state.gameState.gameBoard.score;
-        const time = this.state.gameState.time;
+        const time = this.state.gameState.gameBoard.time;
 
         return (
             <div className="game">
-                <div className="game-board">
+                <div className={this.state.gameState.gameBoard.gameover || this.state.gameState.gameBoard.paused ? 'game-board paused' :  'game-board'}>
                     {/*<PieceView piece={currentPiece}/>*/}
+                    <h2>{this.state.gameState.gameBoard.gameover ? 'Game over' : this.state.gameState.gameBoard.paused ? 'Paused' : ''}</h2>
                     <Board squares={squares} piece={currentPiece}/>
                 </div>
                 <div className="game-info">
                     <div> Score: {score} </div>
-                    <a href="#" onClick={() => this.startTimer()}> Play </a><br/>
-                    <a href="#" onClick={() => this.pauseTimer()}> Pause </a><br/>
-                    <a href="#" onClick={() => this.resetTimer()}> Reset </a><br/>
+                    <a href="#" onClick={() => store.dispatch({type: 'START'}) }> Play </a><br/>
+                    <a href="#" onClick={() => store.dispatch({type: 'PAUSE'}) }> Pause </a><br/>
+                    <a href="#" onClick={() => store.dispatch({type: 'STOP'}) }> Reset </a><br/>
                     <div> Time Elapsed: {GetFormattedTime(time)} </div>
                     <div>{/* status */}</div>
                     <ol>{/* TODO */}</ol>
@@ -401,12 +385,10 @@ class Game extends React.Component {
 
 const initialGameState = {
     "gameBoard": new GameBoard(25, 10),
-    "time": 0,
-    "locked":false,
 }
 
 const gamewatch = (state = initialGameState, action) => {
-    if (!state.locked){
+    if (!state.gameBoard.gameover){
         switch (action.type) {
             case 'LEFT':
                 state.gameBoard.moveLeft();
@@ -423,6 +405,11 @@ const gamewatch = (state = initialGameState, action) => {
                 return {
                     ...state,
                 };
+            case 'DROP':
+                state.gameBoard.drop();
+                return {
+                    ...state,
+                };
             case 'ROTATE_RIGHT':
                 state.gameBoard.rotateRight();
                 return {
@@ -433,32 +420,31 @@ const gamewatch = (state = initialGameState, action) => {
                 return {
                     ...state,
                 };
-            case 'RESET_TIMER':
+            case 'START':
+                clearInterval(state.gameBoard.interval);
+                state.gameBoard.interval = setInterval(() => store.dispatch({type: 'TIME_INCREMENT'}), 1000);
+                state.gameBoard.paused = false;
+                return {
+                    ...state,
+                };
+            case 'PAUSE':
+                clearInterval(state.gameBoard.interval);
+                state.gameBoard.paused = true;
+                return {
+                    ...state,
+                };
+            case 'STOP':
+                clearInterval(state.gameBoard.interval);
                 state = initialGameState;
                 state.gameBoard = new GameBoard(25, 10);
                 return {
                     ...state,
                 };
-            case 'STOP_TIMER':
-                return {
-                    ...state,
-                    "time": state.time,
-                };
             case 'TIME_INCREMENT':
                 state.gameBoard.moveDown();
+                state.gameBoard.time = state.gameBoard.time + 1;
                 return {
                     ...state,
-                    "time": state.time + 1,
-                };
-            case 'TICK':
-                return {
-                    ...state,
-                    "time": state.time + 1,
-                };
-            case 'DECREMENT_TIMER':
-                return {
-                    ...state,
-                    "time": state.time - 1,
                 };
             default:
                 return state;
