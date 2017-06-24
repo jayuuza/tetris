@@ -84,7 +84,7 @@ shapes.selectRandom = function () {
 
 function newPiece() {
     var temp = shapes.selectRandom()
-    return new Piece(temp[0], temp[1], colors.selectRandom(), temp[2], new Point(0, 4))
+    return new Piece(temp[0], temp[1], colors.selectRandom(), temp[3], new Point(0, 4))
 }
 
 class GameBoard {
@@ -107,7 +107,8 @@ class GameBoard {
 
 
     rotateRight() {
-        var new_orientation = "N";
+        let new_orientation = "N";
+        const test = newPiece();
         switch (this.currentPiece.orientation) {
             case "N":
                 new_orientation = "E";
@@ -122,29 +123,35 @@ class GameBoard {
                 new_orientation = "N";
                 break;
         }
-        this.currentPiece.orientation = new_orientation;
-        this.currentPiece.shape = shapes[this.currentPiece.type][this.currentPiece.orientation];
-    }
+        test.position = this.currentPiece.position;
+        test.orientation = new_orientation;
+        test.shape = shapes[this.currentPiece.type][new_orientation];
+        if (is_valid_move(this.board, test, test.position)) {
+            this.currentPiece.orientation = new_orientation;
+            this.currentPiece.shape = shapes[this.currentPiece.type][new_orientation];
+        }
 
-    rotateLeft() {
-        var new_orientation = "N";
-        switch (this.currentPiece.orientation) {
-            case "N":
-                new_orientation = "W";
-                break;
-            case "E":
-                new_orientation = "N";
-                break;
-            case "S":
-                new_orientation = "E";
-                break;
-            case "W":
-                new_orientation = "S";
-                break;
-        }
-        this.currentPiece.orientation = new_orientation;
-        this.currentPiece.shape = shapes[this.currentPiece.type][this.currentPiece.orientation];
     }
+    //
+    // rotateLeft() {
+    //     var new_orientation = "N";
+    //     switch (this.currentPiece.orientation) {
+    //         case "N":
+    //             new_orientation = "W";
+    //             break;
+    //         case "E":
+    //             new_orientation = "N";
+    //             break;
+    //         case "S":
+    //             new_orientation = "E";
+    //             break;
+    //         case "W":
+    //             new_orientation = "S";
+    //             break;
+    //     }
+    //     this.currentPiece.orientation = new_orientation;
+    //     this.currentPiece.shape = shapes[this.currentPiece.type][this.currentPiece.orientation];
+    // }
 
     moveLeft() {
         const position = new Point(this.currentPiece.position.x, this.currentPiece.position.y - 1);
@@ -360,7 +367,6 @@ class Game extends React.Component {
         return (
             <div className="game">
                 <div className={this.state.gameState.gameBoard.gameover || this.state.gameState.gameBoard.paused ? 'game-board paused' :  'game-board'}>
-                    {/*<PieceView piece={currentPiece}/>*/}
                     <h2>{this.state.gameState.gameBoard.gameover ? 'Game over' : this.state.gameState.gameBoard.paused ? 'Paused' : ''}</h2>
                     <Board squares={squares} piece={currentPiece}/>
                 </div>
@@ -368,13 +374,12 @@ class Game extends React.Component {
                     <div> Score: {score} </div>
                     <a href="#" onClick={() => store.dispatch({type: 'START'}) }> Play </a><br/>
                     <a href="#" onClick={() => store.dispatch({type: 'PAUSE'}) }> Pause </a><br/>
-                    <a href="#" onClick={() => store.dispatch({type: 'STOP'}) }> Reset </a><br/>
+                    <a href="#" onClick={() => store.dispatch({type: 'STOP'}) }> Restart </a><br/>
                     <div> Time Elapsed: {GetFormattedTime(time)} </div>
-                    <div>{/* status */}</div>
-                    <ol>{/* TODO */}</ol>
+                    {/*<div>/!* status *!/</div>*/}
+                    {/*<ol>/!* TODO *!/</ol>*/}
                 </div>
                 <div className="piece-preview">
-                    {/*<ShapePreview name="Current piece" piece={currentPiece}/>*/}
                     <ShapePreview name="Next piece" piece={nextPiece}/>
                 </div>
             </div>
@@ -452,6 +457,15 @@ const gamewatch = (state = initialGameState, action) => {
     }
     else
     {
+        if (action.type === 'STOP'){
+            clearInterval(state.gameBoard.interval);
+            state = initialGameState;
+            state.gameBoard = new GameBoard(25, 10);
+            return {
+                ...state,
+            };
+        }
+
         return state;
     }
 
