@@ -23,10 +23,10 @@ class Piece {
 }
 
 // var orientations = ["N","E","S","W"]
-var colors = ["blue", "green", "red", "yellow"]
+var colors = ["blue", "green", "red", "yellow", "orange","purple","cyan"]
 
 colors.selectRandom = function () {
-    var index = Math.floor(Math.random() * 1000000 % 4);
+    var index = Math.floor(Math.random() * 1000000 % colors.length);
     return colors[index];
 }
 
@@ -88,7 +88,7 @@ function newPiece() {
 }
 
 class GameBoard {
-    constructor(rows, columns) {
+    constructor(rows, columns, difficulty = 1) {
         this.rows = rows;
         this.cols = columns;
         this.currentPiece = newPiece();
@@ -103,8 +103,10 @@ class GameBoard {
         this.paused = false;
         this.gameover = false;
         this.interval = 0;
+        this.difficulty = difficulty;
+        this.moves = {};
+        this.speed = 1000;
     }
-
 
     rotateRight() {
         let new_orientation = "N";
@@ -132,26 +134,6 @@ class GameBoard {
         }
 
     }
-    //
-    // rotateLeft() {
-    //     var new_orientation = "N";
-    //     switch (this.currentPiece.orientation) {
-    //         case "N":
-    //             new_orientation = "W";
-    //             break;
-    //         case "E":
-    //             new_orientation = "N";
-    //             break;
-    //         case "S":
-    //             new_orientation = "E";
-    //             break;
-    //         case "W":
-    //             new_orientation = "S";
-    //             break;
-    //     }
-    //     this.currentPiece.orientation = new_orientation;
-    //     this.currentPiece.shape = shapes[this.currentPiece.type][this.currentPiece.orientation];
-    // }
 
     moveLeft() {
         const position = new Point(this.currentPiece.position.x, this.currentPiece.position.y - 1);
@@ -188,6 +170,21 @@ class GameBoard {
         }
     }
 
+    // check every position below the piece until it collides with rubble
+    // place piece on the previous position when rubble is encountered
+    drop() {
+        const curr_position = new Point(this.currentPiece.position.x, this.currentPiece.position.y);
+        for (let i = 0; i < this.rows; i++){
+            curr_position.x++;
+            if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
+                curr_position.x--;
+                break;
+            }
+        }
+        this.currentPiece.position = curr_position;
+        this.placePiece();
+    }
+
     placePiece() {
         for (var i = 0; i < 4; i ++) {
             const piece = this.currentPiece;
@@ -199,7 +196,7 @@ class GameBoard {
         }
 
         //check if there is a line or point to be scored
-        for (var i = 0; i < 25; i++) {
+        for (var i = 0; i < this.rows; i++) {
             var count =0;
             for (var j = 0; j < 10; j++) {
                 if (this.board[i][j] > -1){
@@ -208,7 +205,7 @@ class GameBoard {
             }
 
             //remove row
-            if (count === 10) {
+            if (count === this.cols) {
                 //var index = this.board.indexOf(i);
                 this.board.splice(i, 1);
                 this.board.unshift(new Array(this.cols).fill(-1));
@@ -389,7 +386,7 @@ class Game extends React.Component {
 
 
 const initialGameState = {
-    "gameBoard": new GameBoard(25, 10),
+    "gameBoard": new GameBoard(25, 10, 1),
 }
 
 const gamewatch = (state = initialGameState, action) => {
@@ -420,14 +417,14 @@ const gamewatch = (state = initialGameState, action) => {
                 return {
                     ...state,
                 };
-            case 'ROTATE_LEFT':
-                state.gameBoard.rotateLeft();
-                return {
-                    ...state,
-                };
+            // case 'ROTATE_LEFT':
+            //     state.gameBoard.rotateLeft();
+            //     return {
+            //         ...state,
+            //     };
             case 'START':
                 clearInterval(state.gameBoard.interval);
-                state.gameBoard.interval = setInterval(() => store.dispatch({type: 'TIME_INCREMENT'}), 1000);
+                state.gameBoard.interval = setInterval(() => store.dispatch({type: 'TIME_INCREMENT'}), state.gameBoard.speed);
                 state.gameBoard.paused = false;
                 return {
                     ...state,
@@ -441,7 +438,7 @@ const gamewatch = (state = initialGameState, action) => {
             case 'STOP':
                 clearInterval(state.gameBoard.interval);
                 state = initialGameState;
-                state.gameBoard = new GameBoard(25, 10);
+                state.gameBoard = new GameBoard(25, 10, state.gameBoard.difficulty);
                 return {
                     ...state,
                 };
@@ -460,7 +457,7 @@ const gamewatch = (state = initialGameState, action) => {
         if (action.type === 'STOP'){
             clearInterval(state.gameBoard.interval);
             state = initialGameState;
-            state.gameBoard = new GameBoard(25, 10);
+            state.gameBoard = new GameBoard(25, 10, state.gameBoard.difficulty);
             return {
                 ...state,
             };

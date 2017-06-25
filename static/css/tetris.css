@@ -55,20 +55,28 @@ ol, ul {
 }
 
 .square.blue {
-    /*border: 1px solid #999 !important;*/
     background-color: blue;
 }
 
 .square.yellow {
-    /*border: 1px solid #999 !important;*/
     background-color: yellow;
 }
 
 .square.green {
-    /*border: 1px solid #999 !important;*/
     background-color: green;
 }
 
+.square.orange {
+    background-color: orange;
+}
+
+.square.purple {
+    background-color: purple;
+}
+
+.square.cyan {
+    background-color: cyan;
+}
 /*.square white {*/
 /*background-color: white;*/
 /*}*/
