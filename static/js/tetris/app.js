@@ -105,11 +105,12 @@ class GameBoard {
         this.time_interval = 0;
         this.tick = 0;
         this.difficulty = difficulty;
-        this.moves = {};
+        this.moves = new Object();
         this.speed = 1000 - (50 * this.difficulty);
     }
 
     rotateRight() {
+        this.logAction("ROTATE");
         let new_orientation = "N";
         const test = newPiece();
         switch (this.currentPiece.orientation) {
@@ -133,10 +134,10 @@ class GameBoard {
             this.currentPiece.orientation = new_orientation;
             this.currentPiece.shape = shapes[this.currentPiece.type][new_orientation];
         }
-
     }
 
     moveLeft() {
+        this.logAction("LEFT");
         const position = new Point(this.currentPiece.position.x, this.currentPiece.position.y - 1);
         if (is_valid_move(this.board, this.currentPiece, position)) {
             this.currentPiece.position.y--;
@@ -144,6 +145,7 @@ class GameBoard {
     }
 
     moveRight() {
+        this.logAction("RIGHT");
         const position = new Point(this.currentPiece.position.x, this.currentPiece.position.y + 1);
         if (is_valid_move(this.board, this.currentPiece, position)) {
             this.currentPiece.position.y++;
@@ -177,9 +179,23 @@ class GameBoard {
         this.tick = startTimer('TICK',this.speed);
     }
 
+    logAction(action) {
+        var state = "";
+        for (let i = 0; i < this.rows; i++) {
+            let num = "";
+            for (let j = 0; j < this.cols; j++) {
+                let bit = this.board[i][j] > 0 ? "1" : "0";
+                num = num + bit;
+            }
+            state = state + parseInt(num, 2).toString();
+        }
+        this.moves[state] = action;
+    }
+
     // check every position below the piece until it collides with rubble
     // place piece on the previous position when rubble is encountered
     drop() {
+        this.logAction("DROP")
         const curr_position = new Point(this.currentPiece.position.x, this.currentPiece.position.y);
         for (let i = 0; i < this.rows; i++) {
             curr_position.x++;
@@ -417,6 +433,7 @@ const gamewatch = (state = initialGameState, action) => {
                     ...state,
                 };
             case 'DOWN':
+                state.gameBoard.logAction("DOWN");
                 state.gameBoard.moveDown();
                 return {
                     ...state,
