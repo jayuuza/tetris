@@ -23,7 +23,7 @@ class Piece {
 }
 
 // var orientations = ["N","E","S","W"]
-var colors = ["blue", "green", "red", "yellow", "orange","purple","cyan"]
+var colors = ["blue", "green", "red", "yellow", "orange", "purple", "cyan"]
 
 colors.selectRandom = function () {
     var index = Math.floor(Math.random() * 1000000 % colors.length);
@@ -88,7 +88,7 @@ function newPiece() {
 }
 
 class GameBoard {
-    constructor(rows, columns, difficulty = 1) {
+    constructor(rows, columns, difficulty = 0) {
         this.rows = rows;
         this.cols = columns;
         this.currentPiece = newPiece();
@@ -102,10 +102,11 @@ class GameBoard {
         this.time = 0;
         this.paused = false;
         this.gameover = false;
-        this.interval = 0;
+        this.time_interval = 0;
+        this.tick = 0;
         this.difficulty = difficulty;
         this.moves = {};
-        this.speed = 1000;
+        this.speed = 1000 - (50 * this.difficulty);
     }
 
     rotateRight() {
@@ -157,24 +158,30 @@ class GameBoard {
             // reset game
             this.gameover = true;
         }
-        else
-        {
+        else {
             const down_position = new Point(this.currentPiece.position.x + 1, this.currentPiece.position.y);
             if (is_valid_move(this.board, this.currentPiece, down_position)) {
                 this.currentPiece.position.x++;
             }
-            else
-            {
+            else {
                 this.placePiece();
             }
         }
+    }
+
+    updateDifficulty() {
+        this.difficulty = Math.floor(this.score / 10);
+        this.speed = 1000 - (50 * this.difficulty);
+        clearInterval(this.tick);
+        // clearInterval(this.time_interval);
+        this.tick = startTimer('TICK',this.speed);
     }
 
     // check every position below the piece until it collides with rubble
     // place piece on the previous position when rubble is encountered
     drop() {
         const curr_position = new Point(this.currentPiece.position.x, this.currentPiece.position.y);
-        for (let i = 0; i < this.rows; i++){
+        for (let i = 0; i < this.rows; i++) {
             curr_position.x++;
             if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
                 curr_position.x--;
@@ -186,7 +193,7 @@ class GameBoard {
     }
 
     placePiece() {
-        for (var i = 0; i < 4; i ++) {
+        for (var i = 0; i < 4; i++) {
             const piece = this.currentPiece;
 
             const x = piece.position.x + piece.shape[i].x - 1;
@@ -197,9 +204,9 @@ class GameBoard {
 
         //check if there is a line or point to be scored
         for (var i = 0; i < this.rows; i++) {
-            var count =0;
+            var count = 0;
             for (var j = 0; j < 10; j++) {
-                if (this.board[i][j] > -1){
+                if (this.board[i][j] > -1) {
                     count++;
                 }
             }
@@ -215,26 +222,27 @@ class GameBoard {
 
         this.currentPiece = this.nextPiece;
         this.nextPiece = newPiece();
+        this.updateDifficulty();
     }
 
 }
 
 function is_valid_move(board, piece, position) {
-    for (let j =0; j<4;j++){
+    for (let j = 0; j < 4; j++) {
         let x = position.x + piece.shape[j].x - 1;
         let y = position.y + piece.shape[j].y - 1;
 
         //check for edges
-        if (x > board.length - 1 || y > board[0].length -1 ){
+        if (x > board.length - 1 || y > board[0].length - 1) {
             return false
         }
 
-        if (x < 0 || y < 0){
+        if (x < 0 || y < 0) {
             return false
         }
 
         // check for rubble
-        if (board[x][y] > -1){
+        if (board[x][y] > -1) {
             return false
         }
     }
@@ -264,7 +272,7 @@ function Square(props) {
 function getRows(squares, piece) {
     return squares.map(function (key, index) {
         var row = key.map(function (key2, index2) {
-            for (let j =0; j<4;j++){
+            for (let j = 0; j < 4; j++) {
                 if (piece.shape[j].x === (index - piece.position.x + 1) && piece.shape[j].y === (index2 - piece.position.y + 1)) {
                     return <Square className={"square " + piece.color}/>;
                 }
@@ -289,6 +297,11 @@ function Board(props) {
             {getRows(props.squares, props.piece)}
         </div>
     );
+}
+
+function startTimer(name,speed) {
+    var interval_id = setInterval(() => store.dispatch({type: name}), speed);
+    return interval_id;
 }
 
 
@@ -363,7 +376,8 @@ class Game extends React.Component {
 
         return (
             <div className="game">
-                <div className={this.state.gameState.gameBoard.gameover || this.state.gameState.gameBoard.paused ? 'game-board paused' :  'game-board'}>
+                <div
+                    className={this.state.gameState.gameBoard.gameover || this.state.gameState.gameBoard.paused ? 'game-board paused' : 'game-board'}>
                     <h2>{this.state.gameState.gameBoard.gameover ? 'Game over' : this.state.gameState.gameBoard.paused ? 'Paused' : ''}</h2>
                     <Board squares={squares} piece={currentPiece}/>
                 </div>
@@ -386,11 +400,11 @@ class Game extends React.Component {
 
 
 const initialGameState = {
-    "gameBoard": new GameBoard(25, 10, 1),
+    "gameBoard": new GameBoard(25, 10, 0),
 }
 
 const gamewatch = (state = initialGameState, action) => {
-    if (!state.gameBoard.gameover){
+    if (!state.gameBoard.gameover) {
         switch (action.type) {
             case 'LEFT':
                 state.gameBoard.moveLeft();
@@ -417,34 +431,37 @@ const gamewatch = (state = initialGameState, action) => {
                 return {
                     ...state,
                 };
-            // case 'ROTATE_LEFT':
-            //     state.gameBoard.rotateLeft();
-            //     return {
-            //         ...state,
-            //     };
             case 'START':
-                clearInterval(state.gameBoard.interval);
-                state.gameBoard.interval = setInterval(() => store.dispatch({type: 'TIME_INCREMENT'}), state.gameBoard.speed);
+                clearInterval(state.gameBoard.time_interval);
+                clearInterval(state.gameBoard.tick);
+                state.gameBoard.tick = startTimer('TICK',state.gameBoard.speed);
+                state.gameBoard.time_interval = startTimer('TIME_INCREMENT',1000);
                 state.gameBoard.paused = false;
                 return {
                     ...state,
                 };
             case 'PAUSE':
-                clearInterval(state.gameBoard.interval);
+                clearInterval(state.gameBoard.time_interval);
+                clearInterval(state.gameBoard.tick);
                 state.gameBoard.paused = true;
                 return {
                     ...state,
                 };
             case 'STOP':
-                clearInterval(state.gameBoard.interval);
+                clearInterval(state.gameBoard.time_interval);
+                clearInterval(state.gameBoard.tick);
                 state = initialGameState;
-                state.gameBoard = new GameBoard(25, 10, state.gameBoard.difficulty);
+                state.gameBoard = new GameBoard(state.gameBoard.rows, state.gameBoard.cols, state.gameBoard.difficulty);
                 return {
                     ...state,
                 };
             case 'TIME_INCREMENT':
-                state.gameBoard.moveDown();
                 state.gameBoard.time = state.gameBoard.time + 1;
+                return {
+                    ...state,
+                };
+            case 'TICK':
+                state.gameBoard.moveDown();
                 return {
                     ...state,
                 };
@@ -452,12 +469,12 @@ const gamewatch = (state = initialGameState, action) => {
                 return state;
         }
     }
-    else
-    {
-        if (action.type === 'STOP'){
-            clearInterval(state.gameBoard.interval);
+    else {
+        if (action.type === 'STOP') {
+            clearInterval(state.gameBoard.time_interval);
+            clearInterval(state.gameBoard.tick);
             state = initialGameState;
-            state.gameBoard = new GameBoard(25, 10, state.gameBoard.difficulty);
+            state.gameBoard = new GameBoard(state.gameBoard.rows, state.gameBoard.cols, state.gameBoard.difficulty);
             return {
                 ...state,
             };
