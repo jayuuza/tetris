@@ -171,6 +171,22 @@ class GameBoard {
         }
     }
 
+    // check every position below the piece until it collides with rubble
+    // place piece on the previous position when rubble is encountered
+    drop() {
+        this.logAction("DROP")
+        const curr_position = new Point(this.currentPiece.position.x, this.currentPiece.position.y);
+        for (let i = 0; i < this.rows; i++) {
+            curr_position.x++;
+            if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
+                curr_position.x--;
+                break;
+            }
+        }
+        this.currentPiece.position = curr_position;
+        this.placePiece();
+    }
+
     updateDifficulty() {
         this.difficulty = Math.floor(this.score / 10);
         this.speed = 1000 - (50 * this.difficulty);
@@ -189,23 +205,12 @@ class GameBoard {
             }
             state = state + parseInt(num, 2).toString();
         }
-        this.moves[state] = action;
-    }
-
-    // check every position below the piece until it collides with rubble
-    // place piece on the previous position when rubble is encountered
-    drop() {
-        this.logAction("DROP")
-        const curr_position = new Point(this.currentPiece.position.x, this.currentPiece.position.y);
-        for (let i = 0; i < this.rows; i++) {
-            curr_position.x++;
-            if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
-                curr_position.x--;
-                break;
-            }
+        if (state in this.moves){
+            this.moves[state].unshift(action);
         }
-        this.currentPiece.position = curr_position;
-        this.placePiece();
+        else {
+            this.moves[state] = [action];
+        }
     }
 
     placePiece() {
@@ -300,7 +305,6 @@ function getRows(squares, piece) {
             else {
                 return <Square className={"square " + colors[key2]}/>;
             }
-
         });
         return <div value={index} className="board-row">{row}</div>
     });
@@ -499,7 +503,6 @@ const gamewatch = (state = initialGameState, action) => {
 
         return state;
     }
-
 }
 
 const store = Redux.createStore(gamewatch);
