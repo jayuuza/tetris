@@ -107,6 +107,7 @@ class GameBoard {
         this.difficulty = difficulty;
         this.moves = new Object();
         this.speed = 1000 - (50 * this.difficulty);
+        // this.moves["user_id"] = "blah";
     }
 
     rotateRight() {
@@ -159,6 +160,7 @@ class GameBoard {
         if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
             // reset game
             this.gameover = true;
+            // logGame(this.moves);
         }
         else {
             const down_position = new Point(this.currentPiece.position.x + 1, this.currentPiece.position.y);
@@ -192,7 +194,7 @@ class GameBoard {
         this.speed = 1000 - (50 * this.difficulty);
         clearInterval(this.tick);
         // clearInterval(this.time_interval);
-        this.tick = startTimer('TICK',this.speed);
+        this.tick = startTimer('TICK', this.speed);
     }
 
     logAction(action) {
@@ -205,12 +207,18 @@ class GameBoard {
             }
             state = state + parseInt(num, 2).toString();
         }
-        if (state in this.moves){
+        if (state in this.moves) {
             this.moves[state].unshift(action);
         }
         else {
             this.moves[state] = [action];
         }
+        let postData = {
+            "game_id": this.game_id,
+            "state": state,
+            "action": action
+        }
+        logEvent(postData);
     }
 
     placePiece() {
@@ -283,6 +291,16 @@ function GetFormattedTime(totalSeconds) {
     return finalTime;
 }
 
+function logEvent(Data) {
+    axios.post('/tetris/log_game',
+        JSON.stringify(Data)
+    ).then(function (response) {
+        console.log(response);
+    }).catch(function (error) {
+        console.log(error);
+    });
+}
+
 function Square(props) {
     return (
         <button className={props.className}>
@@ -319,7 +337,7 @@ function Board(props) {
     );
 }
 
-function startTimer(name,speed) {
+function startTimer(name, speed) {
     var interval_id = setInterval(() => store.dispatch({type: name}), speed);
     return interval_id;
 }
@@ -398,17 +416,15 @@ class Game extends React.Component {
             <div className="game">
                 <div
                     className={this.state.gameState.gameBoard.gameover || this.state.gameState.gameBoard.paused ? 'game-board paused' : 'game-board'}>
-                    <h2>{this.state.gameState.gameBoard.gameover ? 'Game over' : this.state.gameState.gameBoard.paused ? 'Paused' : ''}</h2>
+                    <h2>{this.state.gameState.gameBoard.gameover ? 'Game over:' : this.state.gameState.gameBoard.paused ? 'Paused' : ''}</h2>
+                    {/*<h2>{this.state.gameState.gameBoard.gameover ? 'Score - ' + score  : ''}</h2>*/}
+                    {/*<h2>{this.state.gameState.gameBoard.gameover ? 'Time - ' + time  : ''}</h2>*/}
+
                     <Board squares={squares} piece={currentPiece}/>
                 </div>
                 <div className="game-info">
-                    <div> Score: {score} </div>
-                    <a href="#" onClick={() => store.dispatch({type: 'START'}) }> Play </a><br/>
-                    <a href="#" onClick={() => store.dispatch({type: 'PAUSE'}) }> Pause </a><br/>
-                    <a href="#" onClick={() => store.dispatch({type: 'STOP'}) }> Restart </a><br/>
-                    <div> Time Elapsed: {GetFormattedTime(time)} </div>
-                    {/*<div>/!* status *!/</div>*/}
-                    {/*<ol>/!* TODO *!/</ol>*/}
+                    <Controls time={time } score={score} paused={this.state.gameState.gameBoard.paused}
+                              gameover={this.state.gameState.gameBoard.gameover}/>
                 </div>
                 <div className="piece-preview">
                     <ShapePreview name="Next piece" piece={nextPiece}/>
@@ -418,6 +434,29 @@ class Game extends React.Component {
     }
 }
 
+function Controls(props) {
+    if (!props.gameover) {
+        return (
+            <div className="controls">
+                <div> Score: {props.score} </div>
+                <div> Time Elapsed: {GetFormattedTime(props.time)} </div>
+                <a href="#" onClick={() => store.dispatch({type: 'START'}) }> Play </a><br/>
+                <a href="#" onClick={() => store.dispatch({type: 'PAUSE'}) }> Pause </a><br/>
+                <a href="#" onClick={() => store.dispatch({type: 'STOP'}) }> Restart </a><br/>
+            </div>
+        )
+    }
+    else {
+        return (
+            <div className="controls">
+                <div> Score: {props.score} </div>
+                <div> Time Elapsed: {GetFormattedTime(props.time)} </div>
+                <a href="#" onClick={() => store.dispatch({type: 'STOP'}) }> New Game </a><br/>
+            </div>
+        )
+    }
+
+}
 
 const initialGameState = {
     "gameBoard": new GameBoard(25, 10, 0),
@@ -455,8 +494,8 @@ const gamewatch = (state = initialGameState, action) => {
             case 'START':
                 clearInterval(state.gameBoard.time_interval);
                 clearInterval(state.gameBoard.tick);
-                state.gameBoard.tick = startTimer('TICK',state.gameBoard.speed);
-                state.gameBoard.time_interval = startTimer('TIME_INCREMENT',1000);
+                state.gameBoard.tick = startTimer('TICK', state.gameBoard.speed);
+                state.gameBoard.time_interval = startTimer('TIME_INCREMENT', 1000);
                 state.gameBoard.paused = false;
                 return {
                     ...state,
