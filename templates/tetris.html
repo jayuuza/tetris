@@ -2,8 +2,8 @@
 {% load staticfiles %}
 
 {% block extra_imports %}
-{#    <script type="text/babel" src="{% static "js/tetris/model.js" %}"></script>#}
-{#    <script type="text/babel" src="{% static "js/tetris/components.js" %}"></script>#}
+    {#    <script type="text/babel" src="{% static "js/tetris/model.js" %}"></script>#}
+    {#    <script type="text/babel" src="{% static "js/tetris/components.js" %}"></script>#}
     <script src="{% static "js/mousetrap.min.js" %}"></script>
     <script type="text/babel" src="{% static "js/tetris/app.js" %}"></script>
     <link rel="stylesheet" type="text/css" href="{% static "css/tetris.css" %}">
@@ -11,7 +11,10 @@
 {% endblock %}
 
 {% block content %}
-    <div id="game" game={{ game }} ></div>
+    {#    <div id="csrf_token" style="display:none">{{ csrf_token }}</div>#}
+    <input id="game_id" type="hidden" value="{{ game }}"/>
+
+    <div id="game" ></div>
 {% endblock %}
 {% block scripts %}
 {% endblock %}

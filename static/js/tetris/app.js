@@ -100,12 +100,13 @@ class GameBoard {
         this.board = initital_board;
         this.score = 0;
         this.time = 0;
-        this.paused = false;
+        this.paused = true;
         this.gameover = false;
         this.time_interval = 0;
         this.tick = 0;
         this.difficulty = difficulty;
         this.moves = new Object();
+        this.game_id = document.getElementById("game_id").value;
         this.speed = 1000 - (50 * this.difficulty);
         // this.moves["user_id"] = "blah";
     }
@@ -214,6 +215,7 @@ class GameBoard {
             this.moves[state] = [action];
         }
         let postData = {
+            // "headers": { 'crossDomain': true },
             "game_id": this.game_id,
             "state": state,
             "action": action
@@ -292,7 +294,7 @@ function GetFormattedTime(totalSeconds) {
 }
 
 function logEvent(Data) {
-    axios.post('/tetris/log_game',
+    axios.post('/tetris/log_game/',
         JSON.stringify(Data)
     ).then(function (response) {
         console.log(response);
@@ -400,6 +402,7 @@ class Game extends React.Component {
     constructor() {
         super();
         this.state = {
+            // game_id: this.props.game_id,
             gameState: initialGameState
         };
     }
@@ -463,7 +466,7 @@ const initialGameState = {
 }
 
 const gamewatch = (state = initialGameState, action) => {
-    if (!state.gameBoard.gameover) {
+    if (!state.gameBoard.gameover && !state.gameBoard.paused) {
         switch (action.type) {
             case 'LEFT':
                 state.gameBoard.moveLeft();
@@ -540,12 +543,24 @@ const gamewatch = (state = initialGameState, action) => {
             };
         }
 
+        if (action.type === 'START') {
+            clearInterval(state.gameBoard.time_interval);
+            clearInterval(state.gameBoard.tick);
+            state.gameBoard.tick = startTimer('TICK', state.gameBoard.speed);
+            state.gameBoard.time_interval = startTimer('TIME_INCREMENT', 1000);
+            state.gameBoard.paused = false;
+            return {
+                ...state,
+            };
+        }
+        
         return state;
     }
 }
 
 const store = Redux.createStore(gamewatch);
-var game = ReactDOM.render(<Game/>, document.getElementById("game"));
+// const game_id = document.getElementById("game_id");
+var game = ReactDOM.render(<Game  />, document.getElementById("game"));
 
 store.subscribe(() => {
     game.setState({gameState: store.getState()})
