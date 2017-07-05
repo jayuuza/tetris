@@ -161,7 +161,12 @@ class GameBoard {
         if (!is_valid_move(this.board, this.currentPiece, curr_position)) {
             // reset game
             this.gameover = true;
-            // logGame(this.moves);
+            let logData = {
+                "game_id": this.game_id,
+                "score": this.score,
+                "time_taken": this.time
+            };
+            logGame(logData);
         }
         else {
             const down_position = new Point(this.currentPiece.position.x + 1, this.currentPiece.position.y);
@@ -208,12 +213,16 @@ class GameBoard {
             }
             state = state + parseInt(num, 2).toString();
         }
-        if (state in this.moves) {
-            this.moves[state].unshift(action);
-        }
-        else {
-            this.moves[state] = [action];
-        }
+
+        state += "-" +  this.currentPiece.orientation + " " + (this.currentPiece.position.x) + "/" + (this.currentPiece.position.y);
+
+        // if (state in this.moves) {
+        //     this.moves[state].unshift(action);
+        // }
+        // else {
+        //     this.moves[state] = [action];
+        // }
+
         let postData = {
             // "headers": { 'crossDomain': true },
             "game_id": this.game_id,
@@ -294,6 +303,16 @@ function GetFormattedTime(totalSeconds) {
 }
 
 function logEvent(Data) {
+    axios.post('/tetris/log_event/',
+        JSON.stringify(Data)
+    ).then(function (response) {
+        console.log(response);
+    }).catch(function (error) {
+        console.log(error);
+    });
+}
+
+function logGame(Data) {
     axios.post('/tetris/log_game/',
         JSON.stringify(Data)
     ).then(function (response) {
@@ -553,7 +572,7 @@ const gamewatch = (state = initialGameState, action) => {
                 ...state,
             };
         }
-        
+
         return state;
     }
 }

@@ -1,12 +1,15 @@
 from django.contrib import admin
-from tetris.models import Game, Event
+from tetris.models import GamingSession, Event, GameInfo
 
-@admin.register(Game)
+@admin.register(GamingSession)
 class GameAdmin(admin.ModelAdmin):
     list_display = ["id","user","started"]
-    #search_fields = ["user"]
-    #list_filter = ["created"]
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     list_display = ["id","game","time"]
+
+
+@admin.register(GameInfo)
+class GameAdmin(admin.ModelAdmin):
+    list_display = ["id","game","time_taken", "score"]
